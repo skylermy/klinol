@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>PRO-CHISTKA — калькулятор стоимости уборки</title>
+<meta content="Рабочий калькулятор стоимости уборки PRO-CHISTKA: тарифы, доп. услуги, себестоимость, бригада, скидки, PDF-смета и сохранённые заказы." name="description"/>
+
+<link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="anonymous" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/><link href="assets/style.css" rel="stylesheet"/><link href="manifest.json" rel="manifest"/><meta content="#0f172a" name="theme-color"/><script defer="defer" src="config.js"></script><script defer="defer" src="assets/vendor/html2pdf.bundle.min.js"></script><script defer="defer" src="assets/core.js"></script><script defer="defer" src="assets/js/state.js"></script><script defer="defer" src="assets/js/helpers.js"></script><script defer="defer" src="assets/js/settings.js"></script><script defer="defer" src="assets/js/estimate.js"></script><script defer="defer" src="assets/js/main.js"></script></head>
+<body><div class="version-badge" id="versionBadge">v4.10.1</div>
+<div class="login-overlay hidden" id="loginOverlay">
+<div class="login-card">
+<div class="login-title">PRO-CHISTKA</div>
+<div class="muted" style="margin-bottom:14px">Введите пароль для доступа к изменениям</div>
+<input autocomplete="current-password" id="appPasswordInput" placeholder="Пароль" type="password"/>
+<button class="primary" id="appPasswordBtn" style="width:100%;margin-top:10px">Открыть изменения</button>
+<button id="appPasswordCancelBtn" style="width:100%;margin-top:8px">Отмена</button>
+<div class="muted" id="appPasswordError" style="font-size:13px;margin-top:10px"></div>
+</div>
+</div>
+<div class="wrap">
+<div class="grid" style="gap:24px">
+<div class="card">
+<div class="topbar">
+<div>
+<h1 class="title">Калькулятор стоимости уборки</h1>
+<div class="muted">Работает на ПК и телефоне. Всё сохраняется в этом браузере.</div>
+</div>
+<div class="top-actions">
+<button class="primary" id="saveOrderBtn">Сохранить заказ</button>
+<div class="menu-wrap">
+<button aria-controls="moreMenuPanel" aria-expanded="false" aria-label="Дополнительное меню" class="soft icon-menu-btn" id="moreMenuBtn" title="Дополнительное меню" type="button">☰</button>
+<div aria-label="Дополнительное меню" class="more-menu hidden" id="moreMenuPanel" role="menu">
+<button class="soft" id="settingsBtn" role="menuitem" type="button">Настройки</button>
+<button id="dataModalBtn" role="menuitem" type="button">Данные</button>
+<button id="backupModalBtn" role="menuitem" type="button">Резервные копии</button>
+<div class="menu-sep"></div>
+<button id="demoBtn" role="menuitem" type="button">Пример</button>
+<button id="clearBtn" role="menuitem" type="button">Очистить форму</button>
+<button class="hidden" id="lockEditBtn" role="menuitem" type="button">Закрыть изменения</button>
+</div>
+</div>
+<input accept="application/json,.json" class="hidden" id="importOrdersFile" type="file"/>
+<input accept="application/json,.json" class="hidden" id="importBackupFile" type="file"/>
+</div>
+</div>
+</div>
+<div class="backup-chipbar" id="backupCard">
+  <div class="backup-chip" id="backupStatus">Резервная копия: ещё не скачивалась</div>
+  <button class="soft" id="backupQuickOpenBtn" type="button">Резервные копии</button>
+</div>
+<div aria-modal="true" class="settings-modal hidden" id="settingsModal" role="dialog">
+<div class="card settings-modal-card" id="settingsCard">
+<div class="topbar" style="margin-bottom:12px">
+<div>
+<div class="section-title">Настройки</div>
+<div class="muted">Здесь настраиваются тарифы, PDF, компания, тексты и редактор доп.услуг.</div>
+</div>
+<div class="btns"><button class="primary" id="saveSettingsBtn" type="button">Сохранить настройки</button><button id="closeSettingsBtn" type="button">Закрыть</button></div>
+</div>
+<div class="settings-tabs" aria-label="Разделы настроек" role="tablist">
+<button class="settings-tab" data-settings-tab="company" id="settingsTabCompany" role="tab" type="button">Компания / PDF</button>
+<button class="settings-tab" data-settings-tab="tariffs" id="settingsTabTariffs" role="tab" type="button">Тарифы</button>
+<button class="settings-tab" data-settings-tab="texts" id="settingsTabTexts" role="tab" type="button">Тексты</button>
+<button class="settings-tab" data-settings-tab="services" id="settingsTabServices" role="tab" type="button">Услуги</button>
+</div>
+<div class="grid" style="gap:18px">
+<div data-settings-panel="tariffs" id="tariffsCard" role="tabpanel" aria-labelledby="settingsTabTariffs">
+<div class="topbar" style="margin-bottom:12px">
+<div>
+<div class="section-title">Тарифы</div>
+<div class="muted">Здесь настраиваются виды уборки, их цены, минимальная стоимость, описание и отдельные коэффициенты.</div>
+</div>
+<div class="btns">
+<button class="primary" id="saveTariffsSettingsBtn" type="button">Сохранить настройки</button>
+<button class="danger" id="resetStorageBtn">Сбросить всё сохранённое</button>
+</div>
+</div>
+<div class="grid" style="gap:18px">
+<div>
+<div class="chip">Виды уборки / страница тарифа</div>
+<div class="grid" id="ratesWrap"></div>
+</div>
+<div>
+<div class="chip">Заставленность выбранного вида</div>
+<div class="grid" id="clutterWrap"></div>
+</div>
+<div>
+<div class="chip">Загрязнённость выбранного вида</div>
+<div class="grid" id="dirtWrap"></div>
+</div>
+<div>
+<div class="chip">Стоимость выезда</div>
+<div class="muted" style="margin:6px 0 2px">База — фиксированная сумма выезда. «₽ / км» — доплата за километр (умножается на введённые километры; поле «Километры» в форме появляется только когда доплата больше 0).</div>
+<div class="grid" id="travelWrap"></div>
+</div>
+<div>
+<div class="chip">Труд и бригада</div>
+<div class="muted" style="margin:6px 0 2px">Дневные ставки. Число людей считается из нормо-часов и лимита часов на человека в день.</div>
+<div class="grid" id="laborWrap"></div>
+</div>
+<div>
+<div class="chip">Материалы и накладные</div>
+<div class="muted" style="margin:6px 0 2px">Материалы — на м². Накладные в месяц делятся на число заказов в месяц и ложатся на заказ. Меняй число заказов по мере роста — стоимость на заказ упадёт.</div>
+<div class="grid" id="overheadWrap"></div>
+</div>
+</div>
+</div>
+<div data-settings-panel="company" role="tabpanel" aria-labelledby="settingsTabCompany">
+<div class="chip">Компания и PDF</div>
+<div class="grid g2">
+<div><label>Название компании</label><input id="brandName"/></div>
+<div><label>Подзаголовок</label><input id="brandTagline"/></div>
+<div><label>Срок действия сметы, дней</label><input id="estimateValidityDays" min="0" type="number"/></div>
+<div><label> </label><div class="muted" style="font-size:13px">0 — не показывать срок действия. Номер сметы присваивается автоматически при создании PDF.</div></div>
+</div>
+<div style="margin-top:12px">
+<label>Контакты в шапке PDF</label>
+<textarea id="brandContactText" class="compact-textarea" placeholder="+7 (993) 635-60-64&#10;pro-chistka.pro&#10;Telegram: @prochistka"></textarea>
+<div class="muted" style="font-size:13px;margin-top:6px">Вписывай телефон, сайт, Telegram, почту и другие данные в столбец. В PDF они выйдут отдельными строками справа в шапке.</div>
+</div>
+<div class="extra-card" style="margin-top:14px">
+<div class="chip">Текстовая шапка PDF</div>
+<div class="grid g3">
+<div><label>Шрифт шапки</label><input id="pdfHeaderFontFamily" placeholder="Arial, sans-serif"/></div>
+<div><label>Размер названия, px</label><input id="pdfHeaderNameSize" min="10" max="80" type="number"/></div>
+<div><label>Жирность названия</label><select id="pdfHeaderNameWeight"><option value="400">400</option><option value="500">500</option><option value="600">600</option><option value="700">700</option><option value="800">800</option><option value="900">900</option></select></div>
+<div><label>Межбуквенное название, px</label><input id="pdfHeaderNameLetterSpacing" step="0.1" type="number"/></div>
+<div><label>Размер подзаголовка, px</label><input id="pdfHeaderTaglineSize" min="8" max="40" type="number"/></div>
+<div><label>Межбуквенное подзаголовка, px</label><input id="pdfHeaderTaglineLetterSpacing" step="0.1" type="number"/></div>
+<div><label>Шрифт контактов</label><input id="pdfHeaderContactFontFamily" placeholder="по умолчанию как шапка"/></div>
+<div><label>Размер контактов, px</label><input id="pdfHeaderContactSize" min="8" max="40" type="number"/></div>
+<div><label>Жирность контактов</label><select id="pdfHeaderContactWeight"><option value="400">400</option><option value="500">500</option><option value="600">600</option><option value="700">700</option><option value="800">800</option></select></div>
+<div><label>Межбуквенное контактов, px</label><input id="pdfHeaderContactLetterSpacing" step="0.1" type="number"/></div>
+<div><label>Межстрочный интервал контактов</label><input id="pdfHeaderContactLineHeight" min="0.8" max="3" step="0.05" type="number"/></div>
+<div><label>Выравнивание контактов</label><select id="pdfHeaderContactAlign"><option value="right">Справа</option><option value="center">По центру</option><option value="left">Слева</option></select></div>
+<div><label>Название большими буквами</label><select id="pdfHeaderUppercaseName"><option value="true">Да</option><option value="false">Нет</option></select></div>
+<div><label>Цвет названия</label><input id="pdfHeaderNameColor" type="color"/></div>
+<div><label>Цвет подзаголовка</label><input id="pdfHeaderTaglineColor" type="color"/></div>
+<div><label>Цвет контактов</label><input id="pdfHeaderContactColor" type="color"/></div>
+<div><label>Цвет линии</label><input id="pdfHeaderBorderColor" type="color"/></div>
+<div><label>Толщина линии, px</label><input id="pdfHeaderBorderWidth" min="0" max="10" type="number"/></div>
+<div><label>Отступ снизу, px</label><input id="pdfHeaderPaddingBottom" min="0" max="60" type="number"/></div>
+<div><label>Отступ после шапки, px</label><input id="pdfHeaderMarginBottom" min="0" max="80" type="number"/></div>
+</div>
+<div class="notice" style="margin-top:10px">По умолчанию PDF использует текстовую шапку без картинки, поэтому файл сметы получается легче. Логотип больше не хранится в config.js.</div>
+<details style="margin-top:10px">
+<summary style="cursor:pointer;font-weight:800">Дополнительно: логотип-картинка</summary>
+<div class="grid g2" style="margin-top:10px">
+<div><label>Использовать логотип в PDF</label><select id="pdfHeaderUseLogo"><option value="false">Нет, только текст</option><option value="true">Да, использовать картинку</option></select></div>
+<div><label>Загрузить логотип</label><input accept="image/png,image/jpeg,image/webp,image/svg+xml" id="brandLogo" type="file"/></div>
+<div><label> </label><button id="removeLogoBtn" type="button">Удалить логотип</button></div>
+</div>
+<div class="notice" id="brandLogoPreview" style="margin-top:10px">Логотип пока не выбран.</div>
+</details>
+</div>
+<div style="margin-top:14px">
+<label>Блоки в PDF</label>
+<div class="grid g2" id="pdfBlocksWrap"></div>
+<div class="muted" style="font-size:13px;margin-top:8px">Можно включать или выключать блоки и менять их порядок.</div>
+</div>
+</div>
+<div data-settings-panel="texts" role="tabpanel" aria-labelledby="settingsTabTexts">
+<div class="chip">Дополнительная информация для клиента</div>
+<div class="muted" style="font-size:13px;margin-bottom:10px">Этот блок попадёт в PDF перед заметками. Здесь удобно указать оплату, договор, технику, химию и другие условия.</div>
+<textarea id="usefulInfoText" placeholder="Например: Работаем по договору. Технику и химию привозим самостоятельно. Оплата: наличные, перевод, СБП..."></textarea>
+</div>
+<div data-settings-panel="texts" role="tabpanel" aria-labelledby="settingsTabTexts">
+<div class="chip">Основная информация</div>
+<div class="grid g2">
+<div><label>Список техники</label><textarea id="equipmentText" placeholder="Например: пылесос, парогенератор, лестница, удлинитель"></textarea></div>
+<div><label>Информация о химии / сертификатах</label><textarea id="chemistryText" placeholder="Например: используем сертифицированную профессиональную химию..."></textarea></div>
+</div>
+</div>
+<div data-settings-panel="services" role="tabpanel" aria-labelledby="settingsTabServices">
+<div class="chip">Редактор доп.услуг</div>
+<div class="muted" style="font-size:13px;margin-bottom:10px">Здесь можно добавлять услуги, менять единицы измерения, категорию, цену, время и порядок услуг.</div>
+<div class="extra-card" style="margin-bottom:14px">
+<div class="section-title" style="font-size:16px">Категории доп. услуг</div>
+<div class="muted" style="font-size:13px;margin-bottom:10px">Можно переименовать категорию или удалить её с переносом услуг в другую категорию. Категория «Другое» используется как безопасная по умолчанию.</div>
+<div class="grid" id="extraCategoriesWrap"></div>
+</div>
+<div class="extra-card" style="margin-bottom:14px">
+<div class="section-title" style="font-size:16px">Добавить новую услугу</div>
+<div class="grid g3">
+<div><label>Название новой услуги</label><input id="newExtraName"/></div>
+<div><label>Ед. изм.</label><input id="newExtraUnit" value="шт"/></div>
+<div><label>Цена</label><input id="newExtraPrice" min="0" type="number"/></div>
+<div><label>Время, ч</label><input id="newExtraTime" min="0" step="0.1" type="number"/></div>
+<div><label>Категория</label><select id="newExtraCategory"></select></div>
+<div><label>Новая категория</label><input id="newExtraCategoryCustom" placeholder="Например: Балконы"/></div>
+<div style="align-self:end"><button class="primary" id="addExtraBtn" style="width:100%">Добавить услугу</button></div>
+</div>
+</div>
+<div class="grid" id="extrasEditorWrap"></div>
+</div>
+
+</div>
+</div>
+</div>
+<div class="card">
+<div class="section-title">Основные параметры</div>
+<div class="grid g2">
+<div><label>Имя клиента</label><input id="clientName"/></div>
+<div><label>Телефон клиента</label><input id="clientPhone" inputmode="tel" placeholder="+7 (___) ___-__-__" type="tel"/></div>
+<div><label>Объект</label><input id="objectType"/></div>
+<div><label>Дата уборки</label><input id="cleanDate" type="date"/></div>
+<div><label>Площадь, м²</label><input id="area" min="0" type="number"/></div>
+<div><label>Тип уборки</label><select id="cleanType"><option value="maintenance">Поддерживающая</option><option value="general">Генеральная</option><option value="postreno">После ремонта</option></select></div>
+<div><label>Заставленность мебелью</label><select id="clutter"><option value="low">Минимальная</option><option value="medium">Средняя</option><option value="high">Высокая</option></select></div>
+<div><label>Загрязнённость</label><select id="dirtiness"><option value="low">Обычная</option><option value="medium">Повышенная</option><option value="high">Сильная</option></select></div>
+<div><label>Скидка клиенту</label>
+<div class="discount-row">
+<select id="discountMode"><option value="percent">%</option><option value="amount">₽</option></select>
+<input id="discount" max="100" min="0" placeholder="0" type="number"/>
+<input class="hidden" id="discountAmount" min="0" placeholder="0" type="number"/>
+</div>
+<label class="inline-check" style="margin-top:8px"><input id="forceDiscount" type="checkbox"/> Принудительная скидка — продать по рыночной цене без автоподъёма</label>
+</div>
+</div>
+</div>
+
+<div class="grid g2">
+<div class="card">
+<div class="section-title">Выезд</div>
+<div class="grid">
+<div><label>Тип выезда</label><select id="travelType"><option value="kad">В пределах КАД</option><option value="km15">До 15 км от КАД</option><option value="km20plus">20+ км</option></select></div>
+<div class="hidden" id="travelKmBox"><label>Километры</label><input id="travelKm" min="0" type="number"/></div>
+<div class="notice" id="travelHint">Выезд в пределах КАД: бесплатно</div>
+</div>
+</div>
+<div class="card">
+<div class="section-title">Бригада и прибыль</div>
+<div class="muted" style="margin-bottom:10px">Число людей рассчитывается автоматически из нормо-часов, чтобы уложиться в один рабочий день. Дневные ставки задаются в «Тарифах».</div>
+<div class="grid g2">
+<div>
+<label>Ты на объекте</label>
+<select id="ownerRole">
+<option value="none">Не еду</option>
+<option value="manager">Менеджер (контроль)</option>
+<option value="cleaner_manager">Клинер + менеджер</option>
+</select>
+</div>
+<div><label>Целевая прибыль, %</label><input id="profitPercent" min="0" type="number"/></div>
+</div>
+</div>
+</div>
+<details class="card series-card" id="seriesCard">
+<summary class="series-card-summary">
+<span class="section-title" style="margin:0">Серия уборок (абонемент)</span>
+<span class="series-badge" id="seriesBadge">разовая уборка</span>
+</summary>
+<div class="series-card-body">
+<div class="muted" style="margin-bottom:10px">Для регулярной (например, поддерживающей) уборки: накладные расходы делятся на все уборки серии, поэтому одна уборка выходит дешевле разовой. Цена за уборку, итог за серию и выгода клиента попадут в смету.</div>
+<div class="grid g3">
+<div><label>Уборок в серии</label><input id="seriesCount" min="1" step="1" type="number"/></div>
+<div><label>Период обслуживания, мес.</label><input id="seriesMonths" min="1" step="1" type="number"/></div>
+<div><label>Скидка за серию, %</label><input id="seriesDiscount" min="0" max="100" type="number"/></div>
+</div>
+<div style="margin-top:10px"><label>График уборок (попадёт в смету)</label><input id="seriesSchedule" placeholder="Например: каждую пятницу с 10:00"/></div>
+<div class="notice hidden" id="seriesHint" style="margin-top:10px"></div>
+</div>
+</details>
+<div class="card">
+<div class="topbar" style="margin-bottom:12px">
+<div>
+<div class="section-title">Дополнительные услуги</div>
+<div class="muted">Выбери нужные услуги и укажи количество. Добавление и настройка услуг вынесены в «Настройки → Услуги».</div>
+</div>
+<label style="display:flex;align-items:center;gap:8px;font-size:14px"><input id="showOnlySelected" style="width:auto" type="checkbox"/> Показать только выбранные</label>
+</div>
+<input id="extrasSearch" placeholder="Поиск услуги: например, окно, диван, холодильник…" style="margin-bottom:12px" type="search"/>
+<div class="grid" id="extrasWrap"></div>
+</div>
+</div>
+<div class="grid" style="gap:24px">
+<div class="card">
+<div class="section-title">Сохранённые заказы</div>
+<div class="grid" id="savedOrdersWrap"></div>
+</div>
+<div class="card sticky">
+<div class="section-title">Итог расчёта</div>
+<div class="summary-box">
+<div style="font-size:14px;color:#cbd5e1">Рекомендованная цена для клиента</div>
+<div class="summary-big" id="recommendedPrice">0 ₽</div>
+<div style="font-size:14px;color:#cbd5e1">Берётся максимум из рыночной цены и целевой цены по себестоимости.</div>
+</div>
+<div class="notice warning hidden" id="economyWarning"></div>
+<div class="rows" style="margin-top:14px">
+<div class="row"><span class="muted">База до коэффициентов</span><span id="sumBaseRawNoK">0 ₽</span></div>
+<div class="row"><span class="muted">Коэф. заставленности</span><span id="sumClutterK">× 1.00</span></div>
+<div class="row"><span class="muted">После заставленности</span><span id="sumAfterClutter">0 ₽</span></div>
+<div class="row"><span class="muted">Коэф. загрязнённости</span><span id="sumDirtK">× 1.00</span></div>
+<div class="row"><span class="muted">База с коэффициентами</span><span id="sumBase">0 ₽</span></div>
+<div class="row"><span class="muted">Минимальная стоимость</span><span id="sumBaseMin">0 ₽</span></div>
+<div class="row"><span class="muted">Доп. услуги</span><span id="sumExtras">0 ₽</span></div>
+<div class="row"><span class="muted">Выезд</span><span id="sumTravel">0 ₽</span></div>
+<div class="row"><span class="muted">Скидка</span><span id="sumDiscount">− 0 ₽</span></div>
+<div class="divider"></div>
+<div class="row"><strong>Цена по рынку</strong><strong id="sumMarket">0 ₽</strong></div>
+<div class="divider"></div>
+<div class="row"><span class="muted">Труд (бригада + ты)</span><span id="sumLabor">0 ₽</span></div>
+<div class="row"><span class="muted">Материалы</span><span id="sumMaterials">0 ₽</span></div>
+<div class="row"><strong>Жёсткий пол (ниже = убыток)</strong><strong id="sumDirect">0 ₽</strong></div>
+<div class="row"><span class="muted">Накладные на заказ</span><span id="sumOverhead">0 ₽</span></div>
+<div class="row"><strong>Полная себестоимость</strong><strong id="sumFull">0 ₽</strong></div>
+<div class="row hidden" id="taxRow"><span class="muted" id="taxLabel">Налог с выручки</span><span id="sumTax">− 0 ₽</span></div>
+<div class="row"><strong id="targetLabel">Целевая цена (+25%)</strong><strong id="sumTarget">0 ₽</strong></div>
+<div class="divider"></div>
+<div class="row"><span class="muted">Факт. прибыль при рекоменд. цене</span><span id="sumNetProfit">0 ₽</span></div>
+<div class="row"><span class="muted">Маржа</span><span id="sumMargin">0 %</span></div>
+<div class="rows hidden" id="seriesRows">
+<div class="divider"></div>
+<div class="row"><span class="muted">Цена разовой уборки (для сравнения)</span><span id="sumSinglePrice">0 ₽</span></div>
+<div class="row"><span class="muted">Серия</span><span id="sumSeriesCount">—</span></div>
+<div class="row hidden" id="seriesDiscountRow"><span class="muted">Скидка за серию</span><span id="sumSeriesDiscount">− 0 ₽</span></div>
+<div class="row"><span class="muted">Выгода клиента за серию</span><span id="sumSeriesSaving">0 ₽</span></div>
+<div class="row"><strong>Итого за серию</strong><strong id="sumSeriesTotal">0 ₽</strong></div>
+</div>
+<div class="divider"></div>
+<div class="row"><span class="muted">Время на базовую уборку</span><span id="timeBase">0.0 ч</span></div>
+<div class="row"><span class="muted">Время на доп. услуги</span><span id="timeExtras">0.0 ч</span></div>
+<div class="row"><strong>Сумма нормо-часов</strong><strong id="timeNorm">0.0 ч</strong></div>
+<div class="row"><strong id="brigadeLabel">Время уборки бригадой (0 чел.)</strong><strong id="timeBrigade">0.0 ч</strong></div>
+</div>
+<div class="btns" style="margin-top:16px">
+<button class="primary" id="sharePdfBtn">Поделиться PDF</button>
+<button id="previewPdfBtn">Превью PDF</button>
+<button id="printPdfBtn">Скачать PDF</button>
+<button id="copyEstimateBtn">Копировать смету</button>
+</div>
+<div style="margin-top:18px">
+<div class="section-title" style="font-size:16px">Что входит в уборку</div>
+<div class="selected-item" id="includedPreview"></div>
+</div>
+<div style="margin-top:18px">
+<div class="section-title" style="font-size:16px">Выбранные доп.услуги</div>
+<div class="grid" id="selectedExtrasWrap"></div>
+</div>
+<div style="margin-top:18px">
+<label>Заметки по заказу</label>
+<textarea id="notes"></textarea>
+</div>
+<div class="selected-item" style="margin-top:16px">
+<div><strong>Клиент:</strong> <span id="cardClient">—</span></div>
+<div><strong>Объект:</strong> <span id="cardObject">—</span></div>
+<div><strong>Площадь:</strong> <span id="cardArea">0 м²</span></div>
+<div><strong>Уборка:</strong> <span id="cardCleanType">После ремонта</span></div>
+<div><strong>Заставленность:</strong> <span id="cardClutter">Минимальная</span></div>
+<div><strong>Загрязнённость:</strong> <span id="cardDirt">Обычная</span></div>
+</div>
+</div>
+</div>
+</div>
+<div class="modal-overlay hidden" id="shareModal">
+<div class="modal-card wide">
+<div class="topbar" style="margin-bottom:12px">
+<div>
+<div class="section-title" style="margin-bottom:4px">Смета</div>
+<div class="muted">Если автокопирование недоступно, скопируй текст отсюда вручную.</div>
+</div>
+<button id="closeShareBtn">Закрыть</button>
+</div>
+<textarea id="shareText" style="min-height:360px"></textarea>
+</div>
+</div>
+<div class="modal-overlay hidden" id="pdfPreviewModal">
+  <div class="modal-card wide">
+    <div class="topbar" style="margin-bottom:12px">
+      <div>
+        <div class="section-title" style="margin-bottom:4px">Превью PDF-сметы</div>
+        <div class="muted">Так будет выглядеть смета для клиента. Перед скачиванием можно проверить шапку, блоки и стоимость.</div>
+      </div>
+      <div class="btns">
+        <button id="refreshPdfPreviewBtn" type="button">Обновить</button>
+        <button id="closePdfPreviewBtn" type="button">Закрыть</button>
+      </div>
+    </div>
+    <div class="pdf-preview-shell"><div id="pdfPreviewContent"></div></div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="dataModal">
+  <div class="modal-card">
+    <div class="topbar" style="margin-bottom:12px">
+      <div>
+        <div class="section-title" style="margin-bottom:4px">Данные</div>
+        <div class="muted">Экспорт и импорт заказов, а также выгрузка текущих настроек калькулятора в config.js.</div>
+      </div>
+      <button id="closeDataModalBtn" type="button">Закрыть</button>
+    </div>
+    <div class="grid g2">
+      <div class="extra-card">
+        <div class="section-title" style="font-size:16px">Заказы</div>
+        <div class="muted" style="font-size:13px;margin-bottom:10px">Экспортирует или импортирует только сохранённые заказы.</div>
+        <div class="btns"><button id="exportOrdersBtn" type="button">Экспорт заказов</button><button id="importOrdersBtn" type="button">Импорт заказов</button></div>
+      </div>
+      <div class="extra-card">
+        <div class="section-title" style="font-size:16px">Настройки для GitHub</div>
+        <div class="muted" style="font-size:13px;margin-bottom:10px">Скачивает готовый config.js с текущими тарифами, видами уборки, услугами, PDF-шапкой и текстами.</div>
+        <button class="primary" id="exportConfigBtn" type="button">Скачать config.js</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay hidden" id="backupModal">
+  <div class="modal-card">
+    <div class="topbar" style="margin-bottom:12px">
+      <div>
+        <div class="section-title" style="margin-bottom:4px">Резервные копии</div>
+        <div class="muted">Полная копия состояния: заказы, настройки, услуги, тарифы и PDF-шапка.</div>
+      </div>
+      <button id="closeBackupModalBtn" type="button">Закрыть</button>
+    </div>
+    <div class="notice" id="backupStatusFull" style="margin-bottom:12px">Резервная копия ещё не скачивалась.</div>
+    <div class="btns" style="margin-bottom:12px">
+      <button class="primary" id="backupNowBtn" type="button">Скачать резервную копию</button>
+      <button id="importBackupBtn" type="button">Восстановить из копии</button>
+      <label class="inline-check"><input id="autoBackupToggle" type="checkbox"/> Авто-копия каждые 10 заказов</label>
+    </div>
+    <div class="backup-reminder hidden" id="backupReminder"></div>
+  </div>
+</div>
+<div class="mobile-summary-bar" id="mobileSummaryBar">
+  <div class="mobile-summary-info" id="mobileSummaryInfo" role="button" tabindex="0" title="К деталям расчёта">
+    <div class="mobile-summary-price" id="mobileSummaryPrice">0 ₽</div>
+    <div class="mobile-summary-sub" id="mobileSummarySub">рекомендованная цена</div>
+  </div>
+  <button class="primary" id="mobileShareBtn" type="button">Поделиться PDF</button>
+</div>
+<div class="print-area" id="printArea"></div>
+<div class="toast hidden" id="toast">Логотип удалён</div>
+
+
+</body></html>
